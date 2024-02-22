@@ -25,12 +25,12 @@ const userSchema = new mongoose.Schema(
             trim: true,
             index: true
         }, 
-        avatr: {
+        avatar: {
             type : String,
             required: true
         },
         coverImage:{
-            type: String,  // cloudinary url
+            type: String  // cloudinary url
         },
         watchHistory:[
             {

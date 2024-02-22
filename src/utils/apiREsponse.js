@@ -1,8 +1,8 @@
 class apiResponse {
-    cconstructor(
-        statusCOde,
+    constructor(
+        statusCode,
         data,
-        message = "Success"
+        message
     ){
         this.statusCode = statusCode
         this.data = data
@@ -11,4 +11,4 @@ class apiResponse {
     }
 }
 
-export default apiResponse 
+export default apiResponse;
