@@ -268,6 +268,8 @@ const updateUserAvatar = asyncHandler(async(req, res)=>{
    if(!avatarLocalPath){
       throw new apiError(400, "Avatar not found")
    }
+
+   // TODO  ------ Delete old image------  Assignment
    const avatar = await uploadOnCloudinary(avatarLocalPath)
    if(!avatar.url){
       throw new apiError(400, "Error while uploading avatar")
@@ -285,6 +287,7 @@ const updateUserAvatar = asyncHandler(async(req, res)=>{
 return res.status(200).json(new apiResponse(200, user, "Avatar image updated successfully"))
 
 })
+
 // update coverImage
 const updateCoverImage = asyncHandler(async(req, res)=>{
    const coverImageLocalPath = req.file?.path
@@ -309,6 +312,86 @@ const updateCoverImage = asyncHandler(async(req, res)=>{
    return res.status(200).json(new apiResponse(200, user, "cover image updated successfully"))
 })
 
+// get channel profie 
+const getUserChannelProfile = asyncHandler(async(req, res)=>{
+   const {userName} = req.params
+
+   if(!userName?.trim()){
+      throw new apiError(400, "user name is missing")
+   }
+
+   const channel = await User.aggregatePaginate([
+      {
+         $match: {
+            userName : userName?.toLoweCase()
+         }
+      },
+      {
+         $lookup: {
+            from: "subscriptions",
+            localField: "_id",
+            foreignField: "channel",
+            as: "Subscribers"
+
+         }
+      },
+      {
+         $lookup: {
+            from: "subscriptions",
+            localField: "_id",
+            foreignField: "subscriber",
+            as: "SubscribedTo"
+
+         }
+      },
+      {
+         $addFields: {
+            subscribersCount: {
+               $size: "$Subscribers"
+            },
+            channelsSubscribedToCount: {
+               $size: "$SubscribedTo"
+            },
+            isSubscribed: {
+               $cond: {
+                  if: { $in: [req.user?._id, "$Subscribers.subscriber"]},
+                  then: true,
+                  $lse: false
+               }
+            }
+         },
+      },
+      {
+         $project: {
+            userName: 1,
+            fullName: 1,
+            subscribersCount: 1,
+            channelsSubscribedToCount: 1,
+            isSubscribed: 1,
+            email: 1,
+            avatar: 1,
+            coverImage: 1
+         }
+      }
+   ])
+
+   if(!channel?.length){
+      throw new apiResponse(400, "channel does not exists")
+   }
+   return res.status(200).json(new apiResponse(200, "user channel fatched successfully"))
+})
+
+// watch History
+const watchHistory = asyncHandler(async(res, req)=>{
+   const user = await User.aggregate([
+      {
+         $match: {
+            _id: new mongoose.Types.ObjectId(req.user._id)
+         }
+      }
+   ])
+})
+
 export {
         registerUser, 
         loginUser, 
@@ -318,5 +401,6 @@ export {
         getCurrentUser,
         updateAccountDetails,
         updateUserAvatar,
-        updateCoverImage
+        updateCoverImage,
+        getUserChannelProfile
       } 
