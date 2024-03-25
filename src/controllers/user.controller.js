@@ -104,13 +104,12 @@ if(!avatar){
 
  // return response
  return res.status(201).json(
-   new apiResponse(200, createdUser, "user Registered successfully")
-   
+   new apiResponse(200, createdUser, "user Registered successfully") 
  )
 
- return res.status(201).json(
-   new apiResponse(200, createdUser, "User Registered successfully")
-);
+//  return res.status(201).json(
+//    new apiResponse(200, createdUser, "User Registered successfully")
+// );
 })
 
 
@@ -164,8 +163,8 @@ return res
 // logout 
 const logoutUser = asyncHandler(async(req, res)=>{
     await User.findByIdAndUpdate(req.user._id,{
-      $set: {
-         refreshToken: undefined
+      $unset: {
+         refreshToken: 1   // this removes the field from the document.
       }
     }, 
     {
@@ -190,16 +189,21 @@ const refreshAccessToken = asyncHandler(async(req, res)=>{
       if(!incommingREfreshToken) {
          throw new apiError(401,"unauthorized request")
       }
+      console.log("incommingREfreshToken", incommingREfreshToken)
    
       const incommingDecodedToken = jwt.verify(
          incommingREfreshToken,
           process.env.REFRESH_TOKEN_SECRET
       )
+
+      console.log("incommingDecodedToken :", incommingDecodedToken)
    const user = await User.findById(incommingDecodedToken?._id)
+   console.log("IDI : ", incommingDecodedToken._id)
    if(!user){
       throw new apiError(401, "Invalid refresh Token")
    }
-   if(incommingREfreshToken !== User?.refreshToken){
+   console.log("database wala refresh Token:", user.refreshToken)
+   if(incommingREfreshToken !== user?.RefreshToken){
       throw new apiError(401, "Refresh token is expired or used")
    }
    
@@ -223,10 +227,13 @@ const refreshAccessToken = asyncHandler(async(req, res)=>{
 
 // Change password
 const changeCurrentPassword = asyncHandler(async(req, res)=>{
-      const {oldPassword, newPassword} = req.body
+      const {password, newPassword} = req.body
       const user = await User.findById(req.user?._id)
+      // console.log("logedIn user", req.user)
+      // console.log("user is", user)
       
-     const isPasswordCorrect = await User.isPasswordCorrect(oldPassword)
+     const isPasswordCorrect = await user.isPasswordCorrect(password)
+     //console.log("isPasswordCorrect: ", isPasswordCorrect)
 
      if(!isPasswordCorrect){
       throw new apiError(400, "incorrect old password")
@@ -239,7 +246,7 @@ const changeCurrentPassword = asyncHandler(async(req, res)=>{
 })
 
 const getCurrentUser = asyncHandler(async(req, res)=>{
-   return res.status(200).json(200, req.user, "current user fetched successfully")
+   return res.status(200).json(new apiResponse(200, req.user, "current user fetched successfully"))
 
   })
 
@@ -426,7 +433,7 @@ const watchHistory = asyncHandler(async(res, req)=>{
          }
       }
    ])
-   return res.status(200).json(200, user[0].watchHistory, "watch History fetched successfully");
+   return res.status(200).json(new apiResponse(200, user[0].watchHistory, "watch History fetched successfully"));
 })
 
 export {
