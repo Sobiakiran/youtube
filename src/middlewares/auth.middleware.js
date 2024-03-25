@@ -7,12 +7,14 @@ export const verifyJWT = asyncHandler(async(req, res , next)=>{
     try {
         const token = req.cookies?.accessToken || req.header("Authorization")?.replace("Bearer", "")
         console.log("token is: ", token)
- 
+    
 if(!token){
     throw new apiError(401, "unauthorized request")
 }
 const decodedToken = jwt.verify(token, process.env.ACCESS_TOKEN_SECRET)
+console.log("decoded token hay ye", decodedToken)
 const user =  User.findById(decodedToken?._id).select("-password -refreshToken")
+console.log("user middleware wala:",user)
 
 if (!user) {
     throw new apiError(401, "Invalid Access token")
